@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ロマカレンタカー - 予約ダッシュボード</title>
+<title>ロマカレンタカー - 予約ダッシュボード v6</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
@@ -11,18 +11,16 @@
 .mono{font-family:'JetBrains Mono',monospace}
 .toast{animation:slideIn .25s ease}
 @keyframes slideIn{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
-/* スクロールバーを隠す */
 .no-scrollbar::-webkit-scrollbar{display:none}
 .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none}
 </style>
 </head>
 <body class="bg-[#fafaf9] text-zinc-900 min-h-screen antialiased">
 <div id="app" class="max-w-[1400px] mx-auto p-3 md:p-6">
-  <div class="flex items-center justify-center h-[60vh] text-zinc-400">読み込み中...</div>
+  <div class="flex items-center justify-center h-[60vh] text-zinc-400">読み込み中... v6</div>
 </div>
 <div id="toasts" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none"></div>
 
-<!-- 新規予約モーダル -->
 <div id="modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
   <div class="bg-white rounded-[20px] w-full max-w-[600px] max-h-[90vh] overflow-auto no-scrollbar p-6 shadow-2xl">
     <div class="flex justify-between items-center mb-5">
@@ -72,12 +70,12 @@
       <button onclick="closeModal()" class="flex-1 py-3.5 bg-zinc-100 hover:bg-zinc-200 rounded-full font-bold text-[14px]">キャンセル</button>
       <button onclick="submitNew()" id="submitBtn" class="flex-1 py-3.5 bg-black text-white hover:bg-zinc-800 rounded-full font-bold text-[14px] transition">追加する → シートに即反映</button>
     </div>
-    <p class="mt-3 text-[11px] text-zinc-400 text-center">Gmail自動同期と共存。IDは自動採番されます。</p>
   </div>
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbxKAOiEr2dudr2ChqPNVp655E_JdeLLkE_wxqD3lxxwTgij1n9iNjeJ1MrmJTHhM36r/exec";
+// ★★★ ここが新しいデプロイURL (バージョン6) ★★★
+const API_URL = "https://script.google.com/macros/s/AKfycbxt1tHYINYue6H2V6RX7yLx61pFAToSTiqiZA7ShGGUn-fBx9iCMTWddev2ruN2L5f6/exec";
 let state = { data:null, filter:'today', loc:'all', search:'', saving:new Set() };
 
 async function fetchData(){
@@ -96,29 +94,19 @@ async function fetchData(){
     </div>`;
   }
 }
-
-// ---- 安全なHTMLエスケープ（壊れる原因を防止）----
 function escapeHtml(s){
   return String(s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 function safeAttr(s){ return escapeHtml(s).replace(/"/g,'&quot;'); }
-
-// 日付パース: 2フォーマット対応 + JST
 function parseDate(str){
   if(!str) return null;
   const s = String(str).trim();
-  // ISOやスラッシュ
   let d = new Date(s);
   if(!isNaN(d.getTime())) return d;
-  // 日本語: 2026年11月1日（日）0時30分
   const m = s.match(/(\d{4})年(\d{1,2})月(\d{1,2})日.*?(\d{1,2})時(\d{1,2})分/);
-  if(m){
-    return new Date(Number(m[1]), Number(m[2])-1, Number(m[3]), Number(m[4]), Number(m[5]));
-  }
+  if(m){ return new Date(Number(m[1]), Number(m[2])-1, Number(m[3]), Number(m[4]), Number(m[5])); }
   const m2 = s.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})\s+(\d{1,2}):(\d{1,2})/);
-  if(m2){
-    return new Date(Number(m2[1]), Number(m2[2])-1, Number(m2[3]), Number(m2[4]), Number(m2[5]));
-  }
+  if(m2){ return new Date(Number(m2[1]), Number(m2[2])-1, Number(m2[3]), Number(m2[4]), Number(m2[5])); }
   return null;
 }
 function formatShort(str){
@@ -130,16 +118,13 @@ function formatShort(str){
   const mi = String(d.getMinutes()).padStart(2,'0');
   return `${mm}/${dd} ${hh}:${mi}`;
 }
-function isSameDay(a,b){
-  return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
-}
+function isSameDay(a,b){ return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
 function getFiltered(){
   const all = state.data?.reservations||[];
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
   const weekEnd = new Date(today); weekEnd.setDate(weekEnd.getDate()+7);
-
   let filtered = all.filter(r=>{
     const sd = parseDate(r['出発日時']);
     if(!sd) return state.filter==='all';
@@ -149,17 +134,12 @@ function getFiltered(){
     if(state.filter==='unconfirmed') return r['確認済み']!=='TRUE';
     return true;
   });
-
   if(state.loc!=='all') filtered = filtered.filter(r => (r['場所']||'').trim() === state.loc);
   if(state.search){
     const q = state.search.toLowerCase();
     filtered = filtered.filter(r => [r['氏名'], r['車両名'], r['場所'], r['メール'], r['電話'], r['予約ID']].join(' ').toLowerCase().includes(q));
   }
-  // 出発順
-  filtered.sort((a,b)=>{
-    const da = parseDate(a['出発日時']); const db = parseDate(b['出発日時']);
-    if(!da||!db) return 0; return da - db;
-  });
+  filtered.sort((a,b)=>{ const da = parseDate(a['出発日時']); const db = parseDate(b['出発日時']); if(!da||!db) return 0; return da - db; });
   return filtered;
 }
 function getAllLocations(){
@@ -180,19 +160,17 @@ function getStats(){
   return {today: todays.length, tomorrow: tomorrows.length, unconfirmed, unpaid, sales, total: all.length};
 }
 function colorForLocation(name){
-  const map = {'博多駅':'bg-violet-500','花畑':'bg-amber-500','住吉':'bg-emerald-500','比恵町':'bg-blue-500','熊本':'bg-red-500','福岡空港':'bg-cyan-500','福岡空港第二':'bg-cyan-500','福岡空港第2':'bg-cyan-500'};
+  const map = {'博多駅':'bg-violet-500','花畑':'bg-amber-500','住吉':'bg-emerald-500','比恵町':'bg-blue-500','熊本':'bg-red-500','福岡空港':'bg-cyan-500','福岡空港第二':'bg-cyan-500'};
   return map[name]||'bg-zinc-400';
 }
-
 function render(){
   const filtered = getFiltered();
   const stats = getStats();
   const locs = getAllLocations();
-
   document.getElementById('app').innerHTML = `
   <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
     <div>
-      <h1 class="text-[22px] font-black tracking-tight leading-none">Lomaca 管理</h1>
+      <h1 class="text-[22px] font-black tracking-tight leading-none">Lomaca 管理 v6</h1>
       <p class="text-[12px] text-zinc-500 mt-1 mono">ROMA RENTACAR • ${escapeHtml(state.data?.updatedAt ? new Date(state.data.updatedAt).toLocaleString('ja-JP') : '')} 更新 • ${stats.total}件</p>
     </div>
     <div class="flex gap-2">
@@ -200,7 +178,6 @@ function render(){
       <button onclick="openModal()" class="px-5 py-2.5 bg-black text-white rounded-full text-[13px] font-black hover:bg-zinc-800">＋ 電話予約を追加</button>
     </div>
   </header>
-
   <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
     <div class="bg-white border border-zinc-200 rounded-2xl p-4"><div class="text-[11px] font-bold text-zinc-500 uppercase">今日の出発</div><div class="text-[26px] font-black mt-1">${stats.today}<span class="text-[14px] font-bold text-zinc-400 ml-1">件</span></div></div>
     <div class="bg-white border border-zinc-200 rounded-2xl p-4"><div class="text-[11px] font-bold text-zinc-500 uppercase">明日の出発</div><div class="text-[26px] font-black mt-1">${stats.tomorrow}<span class="text-[14px] font-bold text-zinc-400 ml-1">件</span></div></div>
@@ -208,12 +185,9 @@ function render(){
     <div class="bg-white border border-zinc-200 rounded-2xl p-4"><div class="text-[11px] font-bold text-zinc-500 uppercase">未決済</div><div class="text-[26px] font-black mt-1">${stats.unpaid}</div></div>
     <div class="bg-black text-white rounded-2xl p-4 col-span-2 md:col-span-1"><div class="text-[11px] font-bold text-zinc-400 uppercase">今日の売上</div><div class="text-[22px] font-black mt-1 mono">¥${stats.sales.toLocaleString()}</div></div>
   </div>
-
   <div class="bg-white border border-zinc-200 rounded-[18px] p-2 flex flex-wrap gap-2 items-center mb-4 sticky top-3 z-20 shadow-sm">
     <div class="flex gap-1.5 p-1 bg-zinc-100 rounded-full">
-      ${[['today','今日'],['tomorrow','明日'],['week','今週'],['unconfirmed','未確認'],['all','すべて']].map(([k,label])=>`
-        <button onclick="setFilter('${k}')" class="px-4 py-1.5 rounded-full text-[13px] font-bold transition ${state.filter===k?'bg-black text-white shadow':'text-zinc-500 hover:text-zinc-900'}">${label}</button>
-      `).join('')}
+      ${[['today','今日'],['tomorrow','明日'],['week','今週'],['unconfirmed','未確認'],['all','すべて']].map(([k,label])=>`<button onclick="setFilter('${k}')" class="px-4 py-1.5 rounded-full text-[13px] font-bold transition ${state.filter===k?'bg-black text-white shadow':'text-zinc-500 hover:text-zinc-900'}">${label}</button>`).join('')}
     </div>
     <div class="h-6 w-px bg-zinc-200 hidden md:block"></div>
     <select onchange="setLoc(this.value)" class="px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-full text-[13px] font-bold">
@@ -224,106 +198,51 @@ function render(){
       <input value="${safeAttr(state.search)}" oninput="setSearch(this.value)" placeholder="名前・車両・IDで検索..." class="w-full px-4 py-2 bg-zinc-50 border border-zinc-200 rounded-full text-[13px] focus:outline-none focus:ring-2 focus:ring-black">
     </div>
   </div>
-
   <div class="bg-white border border-zinc-200 rounded-[20px] overflow-hidden">
     <div class="overflow-auto no-scrollbar">
       <table class="w-full text-[13px]">
         <thead class="bg-zinc-50 border-b border-zinc-200 text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
-          <tr>
-            <th class="text-left p-3 font-bold whitespace-nowrap">予約ID</th>
-            <th class="text-left p-3 font-bold">氏名</th>
-            <th class="text-left p-3 font-bold">車両 / 場所</th>
-            <th class="text-left p-3 font-bold">出発 → 返却</th>
-            <th class="text-left p-3 font-bold">金額</th>
-            <th class="text-left p-3 font-bold">ナンバー</th>
-            <th class="text-center p-3 font-bold">決済</th>
-            <th class="text-center p-3 font-bold">LINE</th>
-            <th class="text-center p-3 font-bold">確認</th>
-            <th class="text-left p-3 font-bold">メモ</th>
-            <th class="text-left p-3 font-bold">操作</th>
-          </tr>
+          <tr><th class="text-left p-3 font-bold whitespace-nowrap">予約ID</th><th class="text-left p-3 font-bold">氏名</th><th class="text-left p-3 font-bold">車両 / 場所</th><th class="text-left p-3 font-bold">出発 → 返却</th><th class="text-left p-3 font-bold">金額</th><th class="text-left p-3 font-bold">ナンバー</th><th class="text-center p-3 font-bold">決済</th><th class="text-center p-3 font-bold">LINE</th><th class="text-center p-3 font-bold">確認</th><th class="text-left p-3 font-bold">メモ</th><th class="text-left p-3 font-bold">操作</th></tr>
         </thead>
         <tbody>
         ${filtered.length===0 ? `<tr><td colspan="11" class="p-12 text-center text-zinc-400">該当する予約がありません</td></tr>` :
           filtered.map(r=>{
             const id = escapeHtml(r['予約ID']);
-            const isSavingNum = state.saving.has(id+'-ナンバー(4桁)');
             const kessai = String(r['決済完了']).toUpperCase()==='TRUE';
             const line = String(r['LINE登録']).toUpperCase()==='TRUE';
             const kakunin = String(r['確認済み']).toUpperCase()==='TRUE';
             return `<tr class="border-t border-zinc-100 hover:bg-zinc-50/80 transition ${!kakunin?'bg-amber-50/40':''}">
               <td class="p-3 mono text-[11px] text-zinc-500">${id}</td>
               <td class="p-3 font-bold whitespace-nowrap">${escapeHtml(r['氏名']||'')}</td>
-              <td class="p-3 whitespace-nowrap">
-                <div class="font-medium">${escapeHtml(r['車両名']||'')}</div>
-                <div class="flex items-center gap-1.5 mt-1"><span class="w-2 h-2 rounded-full ${colorForLocation((r['場所']||'').trim())}"></span><span class="text-[11px] text-zinc-500">${escapeHtml(r['場所']||'')}</span></div>
-              </td>
-              <td class="p-3 whitespace-nowrap mono text-[12px] leading-tight">
-                <div>${escapeHtml(formatShort(r['出発日時']))}</div>
-                <div class="text-zinc-400">→ ${escapeHtml(formatShort(r['返却日時']))}</div>
-              </td>
+              <td class="p-3 whitespace-nowrap"><div class="font-medium">${escapeHtml(r['車両名']||'')}</div><div class="flex items-center gap-1.5 mt-1"><span class="w-2 h-2 rounded-full ${colorForLocation((r['場所']||'').trim())}"></span><span class="text-[11px] text-zinc-500">${escapeHtml(r['場所']||'')}</span></div></td>
+              <td class="p-3 whitespace-nowrap mono text-[12px] leading-tight"><div>${escapeHtml(formatShort(r['出発日時']))}</div><div class="text-zinc-400">→ ${escapeHtml(formatShort(r['返却日時']))}</div></td>
               <td class="p-3 font-bold mono">¥${(parseInt(String(r['金額']||'').replace(/[^0-9]/g,''))||0).toLocaleString()}</td>
-              <td class="p-3">
-                <input id="num-${id}" value="${safeAttr(r['ナンバー(4桁)']||'')}" maxlength="4" placeholder="----"
-                  onblur="saveNumber('${safeAttr(r['予約ID'])}', this.value)"
-                  class="w-[72px] px-2 py-1.5 bg-zinc-50 border border-zinc-200 rounded-lg text-center mono text-[13px] focus:outline-none focus:ring-2 focus:ring-black ${isSavingNum?'opacity-50':''}">
-              </td>
+              <td class="p-3"><input value="${safeAttr(r['ナンバー(4桁)']||'')}" maxlength="4" placeholder="----" onblur="saveNumber('${safeAttr(r['予約ID'])}', this.value)" class="w-[72px] px-2 py-1.5 bg-zinc-50 border border-zinc-200 rounded-lg text-center mono text-[13px] focus:outline-none focus:ring-2 focus:ring-black"></td>
               <td class="p-3 text-center"><input type="checkbox" ${kessai?'checked':''} onchange="saveField('${safeAttr(r['予約ID'])}','決済完了', this.checked)" class="w-[18px] h-[18px] accent-black rounded"></td>
               <td class="p-3 text-center"><input type="checkbox" ${line?'checked':''} onchange="saveField('${safeAttr(r['予約ID'])}','LINE登録', this.checked)" class="w-[18px] h-[18px] accent-black rounded"></td>
               <td class="p-3 text-center"><input type="checkbox" ${kakunin?'checked':''} onchange="saveField('${safeAttr(r['予約ID'])}','確認済み', this.checked)" class="w-[18px] h-[18px] accent-black rounded"></td>
-              <td class="p-3 min-w-[120px]">
-                <input value="${safeAttr(r['メモ']||'')}" placeholder="メモ"
-                  onblur="saveField('${safeAttr(r['予約ID'])}','メモ', this.value)"
-                  class="w-full px-2.5 py-1.5 bg-zinc-50 border border-zinc-200 rounded-lg text-[12px] focus:outline-none focus:ring-2 focus:ring-black">
-              </td>
-              <td class="p-3">
-                <div class="flex gap-1">
-                  <button onclick="copyMail('${safeAttr(r['予約ID'])}')" class="w-7 h-7 bg-black text-white rounded-full text-[10px] font-bold hover:bg-zinc-800">✉</button>
-                  <button onclick="copyGuide('${safeAttr(r['予約ID'])}')" class="px-2 h-7 bg-white border border-zinc-200 rounded-full text-[10px] font-bold hover:bg-zinc-50">案内</button>
-                </div>
-              </td>
+              <td class="p-3 min-w-[120px]"><input value="${safeAttr(r['メモ']||'')}" placeholder="メモ" onblur="saveField('${safeAttr(r['予約ID'])}','メモ', this.value)" class="w-full px-2.5 py-1.5 bg-zinc-50 border border-zinc-200 rounded-lg text-[12px] focus:outline-none focus:ring-2 focus:ring-black"></td>
+              <td class="p-3"><div class="flex gap-1"><button onclick="copyMail('${safeAttr(r['予約ID'])}')" class="w-7 h-7 bg-black text-white rounded-full text-[10px] font-bold hover:bg-zinc-800">✉</button><button onclick="copyGuide('${safeAttr(r['予約ID'])}')" class="px-2 h-7 bg-white border border-zinc-200 rounded-full text-[10px] font-bold hover:bg-zinc-50">案内</button></div></td>
             </tr>`;
           }).join('')
         }
         </tbody>
       </table>
     </div>
-    <div class="px-4 py-2.5 bg-zinc-50 border-t border-zinc-200 text-[11px] text-zinc-500 flex justify-between">
-      <span>${filtered.length}件表示 / 全${(state.data?.reservations||[]).length}件中</span>
-      <span class="mono">API: script.google.com → Sheets即反映 • 60秒自動更新</span>
-    </div>
-  </div>
-  `;
-
-  // 車両セレクト更新
+    <div class="px-4 py-2.5 bg-zinc-50 border-t border-zinc-200 text-[11px] text-zinc-500 flex justify-between"><span>${filtered.length}件表示 / 全${(state.data?.reservations||[]).length}件中</span><span class="mono">v6 API → Sheets即反映 • 60秒自動更新</span></div>
+  </div>`;
   const vSel = document.getElementById('f_vehicle');
   if(vSel && state.data?.vehicles){
-    const current = vSel.value;
     const opts = state.data.vehicles.map(v=> v['車両名']||v['車両']||v['車種']||'').filter(Boolean);
     const uniq = [...new Set(opts)];
     vSel.innerHTML = '<option value="">車両を選択</option>' + uniq.map(n=>`<option value="${safeAttr(n)}">${escapeHtml(n)}</option>`).join('') + '<option value="__custom__">＋ 直接入力</option>';
-    if(current) vSel.value=current;
-  }
-  const lSel = document.getElementById('f_location');
-  if(lSel){
-    const cur = state.loc!=='all'?state.loc:'';
-    lSel.innerHTML = '<option value="">場所を選択</option>' + locs.map(l=>`<option value="${safeAttr(l)}">${escapeHtml(l)}</option>`).join('') + '<option value="__custom__">＋ 新しい場所を追加</option>';
-    if(cur && locs.includes(cur)) lSel.value=cur;
   }
 }
-
 async function saveField(id, field, value){
-  const key = id+'-'+field;
-  state.saving.add(key);
-  // 楽観的更新
   const r = state.data?.reservations?.find(x=> String(x['予約ID'])===String(id));
   if(r) r[field] = (['決済完了','LINE登録','確認済み'].includes(field) ? (value?'TRUE':'FALSE') : value);
   render();
-  try{
-    await fetch(API_URL, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body: JSON.stringify({id, field, value})});
-    toast(`保存: ${field}`);
-  }catch(e){ toast('保存失敗', true); }
-  finally{ state.saving.delete(key); }
+  try{ await fetch(API_URL, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body: JSON.stringify({id, field, value})}); toast(`保存: ${field}`); }catch(e){ toast('保存失敗', true); }
 }
 function toast(msg, isError){
   const el = document.createElement('div');
@@ -340,42 +259,18 @@ function openModal(){
   document.getElementById('f_end').value = toLocal(later);
   ['f_name','f_price','f_number','f_tel','f_memo'].forEach(id=> document.getElementById(id).value='');
   document.getElementById('f_location_custom').classList.add('hidden');
-  document.getElementById('modal').classList.remove('hidden');
-  document.getElementById('modal').classList.add('flex');
+  document.getElementById('modal').classList.remove('hidden'); document.getElementById('modal').classList.add('flex');
 }
-function closeModal(){
-  document.getElementById('modal').classList.add('hidden');
-  document.getElementById('modal').classList.remove('flex');
-}
+function closeModal(){ document.getElementById('modal').classList.add('hidden'); document.getElementById('modal').classList.remove('flex'); }
 window.openModal=openModal; window.closeModal=closeModal;
 window.setFilter = f=>{ state.filter=f; render(); };
 window.setLoc = l=>{ state.loc=l; render(); };
 window.setSearch = q=>{ state.search=q; render(); };
 window.saveField = saveField;
-window.saveNumber = (id,val)=>{
-  if(val && !/^\d{1,4}$/.test(val.trim())){ toast('数字4桁まで', true); return; }
-  saveField(id, 'ナンバー(4桁)', val.trim());
-};
-window.copyMail = id=>{
-  const r = state.data.reservations.find(x=> String(x['予約ID'])===String(id));
-  if(!r) return;
-  const text = `${r['氏名']}様\n${r['車両名']} / ${r['場所']}\n${r['出発日時']} → ${r['返却日時']}\n金額: ¥${r['金額']} / 予約ID:${r['予約ID']}\n${r['電話']? 'TEL:'+r['電話']:''}`;
-  navigator.clipboard.writeText(text).then(()=> toast('メール文をコピー'));
-};
-window.copyGuide = id=>{
-  const r = state.data.reservations.find(x=> String(x['予約ID'])===String(id));
-  if(!r) return;
-  const name = (r['氏名']||'').split(' ')[0];
-  const place = r['場所']||'';
-  const number = r['ナンバー(4桁)']||'未定';
-  const text = `${name}様\nご予約確認しました！\n${formatShort(r['出発日時'])}〜 ${place}\nナンバー: ${number} でご用意しております。\n当日お待ちしております😊`;
-  navigator.clipboard.writeText(text).then(()=> toast('案内文コピー'));
-};
-document.getElementById('f_location')?.addEventListener('change', e=>{
-  const custom = document.getElementById('f_location_custom');
-  if(e.target.value==='__custom__'){ custom.classList.remove('hidden'); custom.focus(); }
-  else custom.classList.add('hidden');
-});
+window.saveNumber = (id,val)=>{ if(val && !/^\d{1,4}$/.test(val.trim())){ toast('数字4桁まで', true); return; } saveField(id, 'ナンバー(4桁)', val.trim()); };
+window.copyMail = id=>{ const r = state.data.reservations.find(x=> String(x['予約ID'])===String(id)); if(!r) return; const text = `${r['氏名']}様\n${r['車両名']} / ${r['場所']}\n${r['出発日時']} → ${r['返却日時']}\n金額: ¥${r['金額']} / 予約ID:${r['予約ID']}\n${r['電話']? 'TEL:'+r['電話']:''}`; navigator.clipboard.writeText(text).then(()=> toast('メール文をコピー')); };
+window.copyGuide = id=>{ const r = state.data.reservations.find(x=> String(x['予約ID'])===String(id)); if(!r) return; const name = (r['氏名']||'').split(' ')[0]; const text = `${name}様\nご予約確認しました！\n${formatShort(r['出発日時'])}〜 ${r['場所']}\nナンバー: ${r['ナンバー(4桁)']||'未定'} でご用意しております。\n当日お待ちしております😊`; navigator.clipboard.writeText(text).then(()=> toast('案内文コピー')); };
+document.getElementById('f_location')?.addEventListener('change', e=>{ const custom = document.getElementById('f_location_custom'); if(e.target.value==='__custom__'){ custom.classList.remove('hidden'); custom.focus(); } else custom.classList.add('hidden'); });
 async function submitNew(){
   const name = document.getElementById('f_name').value.trim();
   const vehicle = document.getElementById('f_vehicle').value;
@@ -387,53 +282,13 @@ async function submitNew(){
   const number = document.getElementById('f_number').value.trim();
   const tel = document.getElementById('f_tel').value.trim();
   const memo = document.getElementById('f_memo').value.trim();
-
   if(!name || !vehicle || !location || !startLocal || !endLocal){ toast('必須項目を入力してください', true); return; }
-  if(vehicle==='__custom__'){ toast('車両名を直接入力してください', true); return; }
-
-  const toSheet = dtLocal=>{
-    if(!dtLocal) return '';
-    const d = new Date(dtLocal);
-    const w = ['日','月','火','水','木','金','土'][d.getDay()];
-    const pad=n=>String(n).padStart(2,'0');
-    return `${d.getFullYear()}年${pad(d.getMonth()+1)}月${pad(d.getDate())}日（${w}）${pad(d.getHours())}時${pad(d.getMinutes())}分`;
-  };
-
-  const btn = document.getElementById('submitBtn');
-  btn.textContent='追加中...'; btn.disabled=true;
-
-  const payload = {
-    action:'add',
-    data:{
-      '予約ID':'',
-      '氏名':name,
-      '車両名':vehicle,
-      '場所':location,
-      '出発日時':toSheet(startLocal),
-      '返却日時':toSheet(endLocal),
-      '金額':price,
-      'ナンバー(4桁)':number,
-      '電話':tel,
-      'メモ':memo? '[電話] '+memo : '[電話予約]',
-      '決済完了':'FALSE',
-      'LINE登録':'FALSE',
-      '確認済み':'FALSE',
-      'メール':'',
-      '電話番号':tel
-    }
-  };
-
-  try{
-    await fetch(API_URL, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(payload)});
-    toast('追加しました！数秒後に反映されます');
-    closeModal();
-    setTimeout(fetchData, 1500);
-  }catch(e){ toast('追加失敗: '+e.message, true); }
-  finally{ btn.textContent='追加する → シートに即反映'; btn.disabled=false; }
+  const toSheet = dtLocal=>{ const d = new Date(dtLocal); const w = ['日','月','火','水','木','金','土'][d.getDay()]; const pad=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}年${pad(d.getMonth()+1)}月${pad(d.getDate())}日（${w}）${pad(d.getHours())}時${pad(d.getMinutes())}分`; };
+  const btn = document.getElementById('submitBtn'); btn.textContent='追加中...'; btn.disabled=true;
+  const payload = { action:'add', data:{ '予約ID':'', '氏名':name, '車両名':vehicle, '場所':location, '出発日時':toSheet(startLocal), '返却日時':toSheet(endLocal), '金額':price, 'ナンバー(4桁)':number, '電話':tel, 'メモ':memo? '[電話] '+memo : '[電話予約]', '決済完了':'FALSE', 'LINE登録':'FALSE', '確認済み':'FALSE', 'メール':'', '電話番号':tel } };
+  try{ await fetch(API_URL, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(payload)}); toast('追加しました！数秒後に反映されます'); closeModal(); setTimeout(fetchData, 1500); }catch(e){ toast('追加失敗: '+e.message, true); } finally{ btn.textContent='追加する → シートに即反映'; btn.disabled=false; }
 }
-
-fetchData();
-setInterval(fetchData, 60000);
+fetchData(); setInterval(fetchData, 60000);
 </script>
 </body>
 </html>
