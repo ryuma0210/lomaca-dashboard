@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ロマカレンタカー - 予約ダッシュボード v6</title>
+<title>ロマカレンタカー - 予約ダッシュボード v6.1</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
@@ -17,7 +17,7 @@
 </head>
 <body class="bg-[#fafaf9] text-zinc-900 min-h-screen antialiased">
 <div id="app" class="max-w-[1400px] mx-auto p-3 md:p-6">
-  <div class="flex items-center justify-center h-[60vh] text-zinc-400">読み込み中... v6</div>
+  <div class="flex items-center justify-center h-[60vh] text-zinc-400">読み込み中... v6.1</div>
 </div>
 <div id="toasts" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 pointer-events-none"></div>
 
@@ -76,7 +76,9 @@
 <script>
 // ★★★ ここが新しいデプロイURL (バージョン6) ★★★
 const GAS_URL = "https://script.google.com/macros/s/AKfycbwuLsuVQLngUWQn0sfMCdHawTJBrcAhaqaOJCd3Wii4pYuo0kj25KTQq2PesCUX-Fds/exec";
-let state = { data:null, filter:'today', loc:'all', search:'', saving:new Set() };
+const API_URL = GAS_URL;
+// 見た目はv6のまま、初期フィルタだけ all にして数字が出るように
+let state = { data:null, filter:'all', loc:'all', search:'', saving:new Set() };
 
 async function fetchData(){
   try{
@@ -84,9 +86,52 @@ async function fetchData(){
     if(!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     if(json.error) throw new Error(json.error);
-    state.data = json;
+
+    // ★ v6.1 FIX: GASが配列を返すようになったため両対応
+    let reservations = [];
+    if(Array.isArray(json)){
+      reservations = json;
+    }else if(json.reservations){
+      reservations = json.reservations;
+    }else if(json.data){
+      reservations = json.data;
+    }
+
+    // 正規化：新GAS形式 {reserveId, name, vehicle, place, start, end, price, number4} と旧日本語形式を吸収
+    reservations = reservations.map(r=>{
+      return {
+        "予約ID": String(r.reserveId || r["予約ID"] || r["予約Id"] || r.id || ""),
+        "氏名": String(r.name || r["氏名"] || r["名前"] || ""),
+        "車両名": String(r.vehicle || r["車両名"] || r["車両"] || ""),
+        "場所": String(r.place || r["場所"] || ""),
+        "出発日時": String(r.start || r["出発日時"] || r["出発"] || ""),
+        "返却日時": String(r.end || r["返却日時"] || r["返却"] || ""),
+        "金額": String(r.price || r["金額"] || ""),
+        "ナンバー(4桁)": String(r.number4 || r["ナンバー(4桁)"] || r["ナンバー"] || ""),
+        "決済完了": String(r["決済完了"] || r.kessai || "FALSE"),
+        "LINE登録": String(r["LINE登録"] || r.line || "FALSE"),
+        "確認済み": String(r["確認済み"] || r.kakunin || "FALSE"),
+        "メモ": String(r.memo || r["メモ"] || ""),
+        "電話": String(r.phone || r["電話"] || r["電話番号"] || ""),
+        "メール": String(r.email || r["メール"] || ""),
+        "_raw": r
+      };
+    });
+
+    const vehicles = [...new Set(reservations.map(r=>r["車両名"]).filter(Boolean))].map(v=> ({"車両名":v}));
+    const locations = [...new Set(reservations.map(r=>r["場所"]).filter(Boolean))];
+
+    state.data = {
+      reservations,
+      vehicles,
+      locations,
+      updatedAt: new Date().toISOString()
+    };
+
+    console.log("GAS取得成功", reservations.length, reservations[0]);
     render();
   }catch(e){
+    console.error(e);
     document.getElementById('app').innerHTML = `<div class="py-20 text-center">
       <p class="font-bold">読み込みエラー: ${escapeHtml(e.message)}</p>
       <p class="text-sm text-zinc-500 mt-2">GASのデプロイURLが有効か確認してください</p>
@@ -170,7 +215,7 @@ function render(){
   document.getElementById('app').innerHTML = `
   <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
     <div>
-      <h1 class="text-[22px] font-black tracking-tight leading-none">Lomaca 管理 v6</h1>
+      <h1 class="text-[22px] font-black tracking-tight leading-none">Lomaca 管理 v6.1</h1>
       <p class="text-[12px] text-zinc-500 mt-1 mono">ROMA RENTACAR • ${escapeHtml(state.data?.updatedAt ? new Date(state.data.updatedAt).toLocaleString('ja-JP') : '')} 更新 • ${stats.total}件</p>
     </div>
     <div class="flex gap-2">
@@ -205,7 +250,7 @@ function render(){
           <tr><th class="text-left p-3 font-bold whitespace-nowrap">予約ID</th><th class="text-left p-3 font-bold">氏名</th><th class="text-left p-3 font-bold">車両 / 場所</th><th class="text-left p-3 font-bold">出発 → 返却</th><th class="text-left p-3 font-bold">金額</th><th class="text-left p-3 font-bold">ナンバー</th><th class="text-center p-3 font-bold">決済</th><th class="text-center p-3 font-bold">LINE</th><th class="text-center p-3 font-bold">確認</th><th class="text-left p-3 font-bold">メモ</th><th class="text-left p-3 font-bold">操作</th></tr>
         </thead>
         <tbody>
-        ${filtered.length===0 ? `<tr><td colspan="11" class="p-12 text-center text-zinc-400">該当する予約がありません</td></tr>` :
+        ${filtered.length===0 ? `<tr><td colspan="11" class="p-12 text-center text-zinc-400">該当する予約がありません<br><span class="mono text-[11px]">全${stats.total}件中</span></td></tr>` :
           filtered.map(r=>{
             const id = escapeHtml(r['予約ID']);
             const kessai = String(r['決済完了']).toUpperCase()==='TRUE';
@@ -229,7 +274,7 @@ function render(){
         </tbody>
       </table>
     </div>
-    <div class="px-4 py-2.5 bg-zinc-50 border-t border-zinc-200 text-[11px] text-zinc-500 flex justify-between"><span>${filtered.length}件表示 / 全${(state.data?.reservations||[]).length}件中</span><span class="mono">v6 API → Sheets即反映 • 60秒自動更新</span></div>
+    <div class="px-4 py-2.5 bg-zinc-50 border-t border-zinc-200 text-[11px] text-zinc-500 flex justify-between"><span>${filtered.length}件表示 / 全${(state.data?.reservations||[]).length}件中</span><span class="mono">v6.1 配列対応 • 60秒自動更新</span></div>
   </div>`;
   const vSel = document.getElementById('f_vehicle');
   if(vSel && state.data?.vehicles){
