@@ -80,7 +80,7 @@ let state = { data:null, filter:'today', loc:'all', search:'', saving:new Set() 
 
 async function fetchData(){
   try{
-    const res = await fetch(API_URL + '?t=' + Date.now());
+    const res = await fetch(GAS_URL + '?t=' + Date.now());
     if(!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     if(json.error) throw new Error(json.error);
