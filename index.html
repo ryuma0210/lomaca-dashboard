@@ -3,205 +3,220 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ロマカレンタカー - 予約ダッシュボード v7.0</title>
+<title>Lomaca 管理 v7.1</title>
 <style>
-  :root { --bg:#111; --card:#1c1c1c; --border:#333; --text:#eee; --muted:#999; --accent:#7cfa7c; --warn:#ffcc00; }
+  :root{--bg:#f6f5f2;--card:#fff;--border:#e8e5df;--text:#1a1a1a;--muted:#8a8a8a;--accent:#111;--red:#e53935}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px}
-  header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:rgba(17,17,17,0.9);backdrop-filter:blur(8px);z-index:10}
-  header h1{margin:0;font-size:18px}
-  .meta{color:var(--muted);font-size:12px}
-  .container{padding:16px;max-width:1600px;margin:0 auto}
-  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-  input,select,button,textarea{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px}
-  button{cursor:pointer}
-  button.primary{background:var(--text);color:#000;font-weight:600}
-  button:hover{opacity:0.9}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Hiragino Sans","Meiryo",system-ui,sans-serif}
+  header{padding:18px 24px;display:flex;justify-content:space-between;align-items:center}
+  header h1{margin:0;font-size:22px;letter-spacing:-0.5px}
+  header .sub{font-size:12px;color:var(--muted);margin-top:4px}
+  .btn{border-radius:999px;border:1px solid var(--border);padding:10px 18px;background:var(--card);cursor:pointer;font-size:14px}
+  .btn-black{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn-small{padding:6px 12px;font-size:12px}
+  .container{padding:0 24px 24px;max-width:1400px;margin:0 auto}
+  .cards{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:18px 0}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px 20px}
+  .card .label{font-size:12px;color:var(--muted);margin-bottom:8px}
+  .card .value{font-size:28px;font-weight:700}
+  .card .value.red{color:var(--red)}
+  .card.black{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .filters{background:var(--card);border:1px solid var(--border);border-radius:999px;padding:6px;display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin:12px 0}
+  .filters .tab{border:0;background:transparent;padding:8px 16px;border-radius:999px;cursor:pointer;color:var(--muted);font-size:14px}
+  .filters .tab.active{background:var(--accent);color:#fff}
+  .filters .sep{width:1px;height:20px;background:var(--border);margin:0 8px}
+  select, input[type="text"]{border:1px solid var(--border);border-radius:999px;padding:8px 14px;background:var(--card);font-size:13px}
+  .tableWrap{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden}
   table{width:100%;border-collapse:collapse;font-size:13px}
-  th,td{border-bottom:1px solid var(--border);padding:8px 6px;text-align:left;white-space:nowrap}
-  th{color:var(--muted);font-weight:600;position:sticky;top:60px;background:var(--bg)}
-  td.memo{white-space:normal;max-width:240px;word-break:break-word}
-  .badge{padding:2px 6px;border-radius:6px;font-size:11px;border:1px solid var(--border)}
-  .badge.ok{background:#143214;border-color:#2a5a2a;color:var(--accent)}
-  .badge.no{background:#2a1a1a;border-color:#5a2a2a;color:#ff8888}
-  .tableWrap{overflow:auto;max-height:70vh;border:1px solid var(--border);border-radius:12px}
-  .right{margin-left:auto}
-  .small{font-size:12px;color:var(--muted)}
+  th{color:var(--muted);font-weight:500;padding:14px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;background:#faf9f7}
+  td{padding:12px;border-bottom:1px solid #f0eeea;vertical-align:middle}
+  td.price{font-weight:600;white-space:nowrap}
+  .pill{border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:12px;background:#faf9f7;white-space:nowrap;display:inline-block}
+  .check{width:18px;height:18px}
+  .memoInput{width:100%;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12px}
+  .iconBtn{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border:0}
+  /* すべて選択時のみ出る拡張バー */
+  #extraBar{display:none;gap:8px;align-items:center;padding:8px 0 12px;flex-wrap:wrap}
+  #extraBar.show{display:flex}
 </style>
 </head>
 <body>
 <header>
-  <h1>ロマカレンタカー - 予約ダッシュボード v7.0 <span class="small">A-T新レイアウト対応</span></h1>
-  <div class="meta" id="updatedAt">読み込み中...</div>
+  <div>
+    <h1>Lomaca 管理 v7.1 <span style="font-size:12px;color:var(--muted);font-weight:400;margin-left:8px">A-T対応 / 姓・名分割</span></h1>
+    <div class="sub" id="updated">ROMA RENTACAR ・ 読み込み中... ・ 0件</div>
+  </div>
+  <div style="display:flex;gap:10px">
+    <button class="btn" onclick="loadData()">↻ 更新</button>
+    <button class="btn btn-black" onclick="document.getElementById('addModal').style.display='block'">＋ 電話予約を追加</button>
+  </div>
 </header>
-<div class="container">
 
-  <div class="card">
-    <h3 style="margin:0 0 10px">＋ 電話・手動予約を追加</h3>
-    <div class="grid">
+<div class="container">
+  <div class="cards" id="summaryCards">
+    <div class="card"><div class="label">今日の出発</div><div class="value" id="c_today">0<span style="font-size:14px;font-weight:400;color:var(--muted)"> 件</span></div></div>
+    <div class="card"><div class="label">明日の出発</div><div class="value" id="c_tomorrow">0<span style="font-size:14px;font-weight:400;color:var(--muted)"> 件</span></div></div>
+    <div class="card"><div class="label">未確認</div><div class="value red" id="c_unconf">0</div></div>
+    <div class="card"><div class="label">未決済</div><div class="value" id="c_unpaid">0</div></div>
+    <div class="card black"><div class="label" style="color:#aaa">今日の売上</div><div class="value" id="c_sales">¥0</div></div>
+  </div>
+
+  <div class="filters">
+    <button class="tab" data-f="today" onclick="setFilter('today')">今日</button>
+    <button class="tab" data-f="tomorrow" onclick="setFilter('tomorrow')">明日</button>
+    <button class="tab" data-f="week" onclick="setFilter('week')">今週</button>
+    <button class="tab" data-f="unconf" onclick="setFilter('unconf')">未確認</button>
+    <button class="tab active" data-f="all" onclick="setFilter('all')">すべて</button>
+    <div class="sep"></div>
+    <select id="placeFilter" onchange="render()"><option value="">📍 すべての場所</option></select>
+    <input type="text" id="q" placeholder="名前・車両・IDで検索..." style="flex:1;min-width:180px" oninput="render()">
+  </div>
+
+  <!-- すべて選択時のみ表示 -->
+  <div id="extraBar">
+    <input type="text" id="q2" placeholder="検索: 氏名/車両/場所/電話/メモ" oninput="syncSearch()" style="min-width:220px">
+    <select id="placeFilter2" onchange="syncPlace()"><option value="">全場所</option></select>
+    <select id="sortBy" onchange="render()">
+      <option value="yoyaku_desc">予約日 新しい順（最後の予約が誰か）</option>
+      <option value="start_desc">出発日 新しい順</option>
+      <option value="start_asc">出発日 古い順</option>
+    </select>
+    <button class="btn btn-small" onclick="loadData()">再読み込み</button>
+    <span class="sub" id="extraCount"></span>
+  </div>
+
+  <div class="tableWrap">
+    <table>
+      <thead>
+        <tr>
+          <th>予約ID</th><th>氏名<br><span style="font-size:10px">姓 / 名</span></th><th>車両 / 場所</th><th>出発 → 返却</th><th>金額</th><th>ナンバー<br>予約日</th><th>決済</th><th>LINE</th><th>確認</th><th>メモ</th><th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 追加モーダル簡易 -->
+<div id="addModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:20">
+  <div style="background:var(--card);border-radius:16px;padding:20px;max-width:600px;margin:60px auto;border:1px solid var(--border)">
+    <h3 style="margin:0 0 12px">電話・手動予約を追加</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <input id="f_name" placeholder="氏名 * 例: 山本 侑駕">
-      <input id="f_vehicle" placeholder="車両名 * 例: アクア 比恵町">
-      <input id="f_place" placeholder="場所 * 例: 比恵町">
-      <input id="f_price" type="number" placeholder="金額 (円)">
+      <input id="f_vehicle" placeholder="車両名 *">
+      <input id="f_place" placeholder="場所 *">
+      <input id="f_price" type="number" placeholder="金額">
       <input id="f_start" type="datetime-local">
       <input id="f_end" type="datetime-local">
       <input id="f_number" placeholder="ナンバー4桁">
-      <input id="f_phone" placeholder="電話番号">
-      <input id="f_email" placeholder="メールアドレス">
-      <textarea id="f_memo" placeholder="メモ（任意）" style="grid-column:span 2"></textarea>
+      <input id="f_phone" placeholder="電話">
+      <input id="f_email" placeholder="メール" style="grid-column:span 2">
+      <textarea id="f_memo" placeholder="メモ (T列 最右端に保存)" style="grid-column:span 2;border:1px solid var(--border);border-radius:8px;padding:8px"></textarea>
     </div>
-    <div style="margin-top:10px;display:flex;gap:8px">
-      <button class="primary" onclick="addReservation()">追加する</button>
-      <span class="small">※ 氏名は空白で姓・名に自動分割されます。メモはT列(最右端)に保存</span>
+    <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+      <button class="btn" onclick="document.getElementById('addModal').style.display='none'">キャンセル</button>
+      <button class="btn btn-black" onclick="addReservation()">追加する</button>
     </div>
-  </div>
-
-  <div class="card">
-    <div class="controls">
-      <input id="q" placeholder="検索: 氏名/車両/場所/電話/メモ" oninput="render()" style="min-width:260px">
-      <select id="filterPlace" onchange="render()"><option value="">全場所</option></select>
-      <select id="sortBy" onchange="render()">
-        <option value="reserveId_desc">予約ID 新しい順</option>
-        <option value="start_asc">出発 早い順</option>
-        <option value="yoyaku_desc">予約日 新しい順（最後の予約が誰か）</option>
-      </select>
-      <button onclick="loadData()">再読み込み</button>
-      <span class="right small" id="count"></span>
-    </div>
-    <div class="tableWrap">
-      <table id="tbl">
-        <thead>
-          <tr>
-            <th>予約ID</th><th>氏名(B)</th><th>姓(C)</th><th>名(D)</th><th>車両名(E)</th><th>場所(F)</th>
-            <th>出発日時(G)</th><th>返却日時(H)</th><th>金額(I)</th><th>ナンバー(J)</th>
-            <th>決済(K)</th><th>LINE(L)</th><th>確認(M)</th>
-            <th>メール(N)</th><th>電話(O)</th><th>予約日(P)</th><th>メモ(T)</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px">※氏名は空白で自動的に姓(C列)・名(D列)に分割、メモはT列に保存</div>
   </div>
 </div>
 
 <script>
-// ▼▼▼ ここにSS側のGAS WebアプリURLを貼る ▼▼▼
-const GAS_URL = 'https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbwuLsuVQLngUWQn0sfMCdHawTJBrcAhaqaOJCd3Wii4pYuo0kj25KTQq2PesCUX-Fds/exec/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbw.../exec'; // ← SS側のWebアプリURLに置換
 
-let allData = [];
+let allData=[];
+let currentFilter='all';
+
+function setFilter(f){
+  currentFilter=f;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.f===f));
+  const extra=document.getElementById('extraBar');
+  if(f==='all') extra.classList.add('show'); else extra.classList.remove('show');
+  render();
+}
+function syncSearch(){ document.getElementById('q').value=document.getElementById('q2').value; render(); }
+function syncPlace(){ document.getElementById('placeFilter').value=document.getElementById('placeFilter2').value; render(); }
 
 async function loadData(){
-  document.getElementById('updatedAt').textContent = '読み込み中... v7.0';
+  document.getElementById('updated').textContent='ROMA RENTACAR ・ 読み込み中...';
   try{
-    const res = await fetch(GAS_URL);
-    const json = await res.json();
-    allData = json.reservations || [];
-    // 場所フィルタ作成
-    const places = [...new Set(allData.map(r=>r['場所']||r['場所マスタ']||'').filter(Boolean))];
-    const sel = document.getElementById('filterPlace');
-    sel.innerHTML = '<option value="">全場所</option>' + places.map(p=>`<option>${p}</option>`).join('');
-    document.getElementById('updatedAt').textContent = '更新: ' + new Date(json.updatedAt||Date.now()).toLocaleString() + ' / ' + allData.length + '件';
+    const res=await fetch(GAS_URL); const json=await res.json();
+    allData=json.reservations||[];
+    const places=[...new Set(allData.map(r=>r['場所']||'').filter(Boolean))];
+    const opts='<option value="">📍 すべての場所</option>'+places.map(p=>`<option>${p}</option>`).join('');
+    document.getElementById('placeFilter').innerHTML=opts;
+    document.getElementById('placeFilter2').innerHTML='<option value="">全場所</option>'+places.map(p=>`<option>${p}</option>`).join('');
+    document.getElementById('updated').textContent=`ROMA RENTACAR ・ ${new Date().toLocaleString()} 更新 ・ ${allData.length}件`;
+    updateSummary();
     render();
-  }catch(e){
-    document.getElementById('updatedAt').textContent = '読み込み失敗: ' + e.message;
-    console.error(e);
-  }
+  }catch(e){ document.getElementById('updated').textContent='読み込み失敗: '+e.message; }
+}
+
+function updateSummary(){
+  const todayStr=new Date().toISOString().slice(0,10);
+  const tomorrow=new Date(Date.now()+86400000).toISOString().slice(0,10);
+  const todayCount=allData.filter(r=>String(r['出発日時']||'').includes(todayStr)||String(r['出発(ソート用)']||'').slice(0,10)===todayStr).length;
+  // 簡易: 未確認=確認済みがFALSE、未決済=決済完了がFALSE
+  const unconf=allData.filter(r=>!(r['確認済み']===true||r['確認済み']==='TRUE')).length;
+  const unpaid=allData.filter(r=>!(r['決済完了']===true||r['決済完了']==='TRUE')).length;
+  document.getElementById('c_today').innerHTML=todayCount+'<span style="font-size:14px;font-weight:400;color:var(--muted)"> 件</span>';
+  document.getElementById('c_tomorrow').innerHTML='0<span style="font-size:14px;font-weight:400;color:var(--muted)"> 件</span>';
+  document.getElementById('c_unconf').textContent=unconf;
+  document.getElementById('c_unpaid').textContent=unpaid;
 }
 
 function render(){
-  const q = document.getElementById('q').value.toLowerCase();
-  const place = document.getElementById('filterPlace').value;
-  const sortBy = document.getElementById('sortBy').value;
-  let data = [...allData];
-  if(q){
-    data = data.filter(r=> Object.values(r).join(' ').toLowerCase().includes(q));
+  const q=(document.getElementById('q').value||document.getElementById('q2').value||'').toLowerCase();
+  const place=document.getElementById('placeFilter').value||document.getElementById('placeFilter2').value;
+  const sortBy=document.getElementById('sortBy').value;
+  let data=[...allData];
+  if(q) data=data.filter(r=>Object.values(r).join(' ').toLowerCase().includes(q));
+  if(place) data=data.filter(r=>(r['場所']||'')===place);
+  if(currentFilter==='today'){
+    const t=new Date().toISOString().slice(0,10); data=data.filter(r=>String(r['出発日時']||'').includes(t));
+  }else if(currentFilter==='unconf'){
+    data=data.filter(r=>!(r['確認済み']===true||r['確認済み']==='TRUE'));
   }
-  if(place){
-    data = data.filter(r=> (r['場所']||'')===place);
-  }
-  if(sortBy==='reserveId_desc'){
-    data.sort((a,b)=> String(b['予約ID']||'').localeCompare(String(a['予約ID']||'')));
-  }else if(sortBy==='start_asc'){
-    data.sort((a,b)=> new Date(a['出発(ソート用)']||a['出発日時']||0) - new Date(b['出発(ソート用)']||b['出発日時']||0));
-  }else if(sortBy==='yoyaku_desc'){
-    data.sort((a,b)=> new Date(b['予約日(ソート用)']||b['予約日']||0) - new Date(a['予約日(ソート用)']||a['予約日']||0));
-  }
-  document.getElementById('count').textContent = data.length + '件表示';
-  const tbody = document.getElementById('tbody');
-  tbody.innerHTML = data.slice(0,500).map(r=>{
-    const id = r['予約ID']||'';
-    const chk = (f)=> {
-      const v = r[f];
-      const isTrue = v===true || v==='TRUE' || v==='true';
-      return `<input type="checkbox" ${isTrue?'checked':''} onchange="updateField('${id}','${f}',this.checked)">`;
-    };
+  if(sortBy==='reserveId_desc') data.sort((a,b)=>String(b['予約ID']||'').localeCompare(String(a['予約ID']||'')));
+  else if(sortBy==='start_asc') data.sort((a,b)=>new Date(a['出発(ソート用)']||a['出発日時']||0)-new Date(b['出発(ソート用)']||b['出発日時']||0));
+  else if(sortBy==='start_desc') data.sort((a,b)=>new Date(b['出発(ソート用)']||b['出発日時']||0)-new Date(a['出発(ソート用)']||a['出発日時']||0));
+  else if(sortBy==='yoyaku_desc') data.sort((a,b)=>new Date(b['予約日(ソート用)']||b['予約日']||0)-new Date(a['予約日(ソート用)']||a['予約日']||0));
+  else if(sortBy==='sei_asc') data.sort((a,b)=>String(a['姓']||a['氏名']||'').localeCompare(String(b['姓']||b['氏名']||'')));
+
+  document.getElementById('extraCount').textContent=data.length+'件表示';
+  const tbody=document.getElementById('tbody');
+  tbody.innerHTML=data.slice(0,600).map(r=>{
+    const id=r['予約ID']||'';
+    const sei=r['姓']||''; const mei=r['名']||''; const full=r['氏名']||'';
+    const vehicle=r['車両名']||''; const placeV=r['場所']||'';
+    const start=r['出発日時']||''; const end=r['返却日時']||'';
+    const price=r['金額']?('¥'+Number(r['金額']).toLocaleString()):'';
+    const yoyaku=r['予約日']||'';
+    const memo=r['メモ']||'';
+    const chk=(f)=>{ const v=r[f]; const isTrue=v===true||v==='TRUE'||v==='true'; return `<input type="checkbox" class="check" ${isTrue?'checked':''} onchange="updateField('${id}','${f}',this.checked)">`; };
     return `<tr>
-      <td>${id}</td>
-      <td>${esc(r['氏名']||'')}</td>
-      <td>${esc(r['姓']||'')}</td>
-      <td>${esc(r['名']||'')}</td>
-      <td>${esc(r['車両名']||'')}</td>
-      <td>${esc(r['場所']||'')}</td>
-      <td>${esc(r['出発日時']||'')}</td>
-      <td>${esc(r['返却日時']||'')}</td>
-      <td>${esc(r['金額']||'')}</td>
-      <td>${esc(r['ナンバー(4桁)']||'')}</td>
-      <td>${chk('決済完了')}</td>
-      <td>${chk('LINE登録')}</td>
-      <td>${chk('確認済み')}</td>
-      <td>${esc(r['メール']||'')}</td>
-      <td>${esc(r['電話']||'')}</td>
-      <td>${esc(r['予約日']||'')}</td>
-      <td class="memo">${esc(r['メモ']||'')}</td>
+      <td style="color:var(--muted)">${id}</td>
+      <td><div style="font-weight:600">${esc(full)}</div><div style="font-size:11px;color:var(--muted)">${esc(sei)} ${esc(mei)}</div></td>
+      <td><div>${esc(vehicle)}</div><div style="font-size:11px;color:var(--muted)">→ ${esc(placeV)}</div></td>
+      <td><div>${esc(start)}</div><div style="font-size:11px;color:var(--muted)">→ ${esc(end)}</div></td>
+      <td class="price">${price}</td>
+      <td><span class="pill">${esc(yoyaku).slice(0,10)||'---'}</span></td>
+      <td>${chk('決済完了')}</td><td>${chk('LINE登録')}</td><td>${chk('確認済み')}</td>
+      <td><input class="memoInput" value="${esc(memo)}" placeholder="メモ" onchange="updateField('${id}','メモ',this.value)"></td>
+      <td><button class="iconBtn" title="案内" onclick="alert('ID:${id}')">✉</button></td>
     </tr>`;
   }).join('');
 }
 
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-async function updateField(id, field, value){
-  try{
-    await fetch(GAS_URL, {method:'POST', body: JSON.stringify({id, field, value})});
-  }catch(e){ alert('更新失敗: '+e.message); }
-}
-
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+async function updateField(id,field,value){ try{ await fetch(GAS_URL,{method:'POST',body:JSON.stringify({id,field,value})}); }catch(e){ alert('更新失敗:'+e.message);} }
 async function addReservation(){
-  const name = document.getElementById('f_name').value.trim();
-  const vehicle = document.getElementById('f_vehicle').value.trim();
-  const place = document.getElementById('f_place').value.trim();
-  const start = document.getElementById('f_start').value;
-  const end = document.getElementById('f_end').value;
-  if(!name||!vehicle||!place||!start||!end){ alert('必須項目を入力してください'); return; }
-  const price = document.getElementById('f_price').value;
-  const number = document.getElementById('f_number').value;
-  const phone = document.getElementById('f_phone').value;
-  const email = document.getElementById('f_email').value;
-  const memo = document.getElementById('f_memo').value;
-
-  const data = {
-    '氏名': name,
-    '車両名': vehicle,
-    '場所': place,
-    '金額': price,
-    'ナンバー(4桁)': number,
-    '電話': phone,
-    'メール': email,
-    'メモ': memo,
-    '出発日時': start.replace('T',' ') ,
-    '返却日時': end.replace('T',' '),
-    '出発(ソート用)': new Date(start),
-    '返却(ソート用)': new Date(end),
-  };
-  try{
-    const res = await fetch(GAS_URL, {method:'POST', body: JSON.stringify({action:'add', data})});
-    const json = await res.json();
-    if(json.success){ alert('追加しました: '+json.id); loadData(); }
-    else alert('失敗: '+json.error);
-  }catch(e){ alert('追加失敗: '+e.message); }
+  const name=document.getElementById('f_name').value.trim(); const vehicle=document.getElementById('f_vehicle').value.trim();
+  const place=document.getElementById('f_place').value.trim(); const start=document.getElementById('f_start').value; const end=document.getElementById('f_end').value;
+  if(!name||!vehicle||!place||!start||!end){ alert('必須を入力'); return; }
+  const data={'氏名':name,'車両名':vehicle,'場所':place,'金額':document.getElementById('f_price').value,'ナンバー(4桁)':document.getElementById('f_number').value,'電話':document.getElementById('f_phone').value,'メール':document.getElementById('f_email').value,'メモ':document.getElementById('f_memo').value,'出発日時':start.replace('T',' '),'返却日時':end.replace('T',' '),'出発(ソート用)':new Date(start),'返却(ソート用)':new Date(end)};
+  try{ const res=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'add',data})}); const j=await res.json(); if(j.success){ alert('追加:'+j.id); document.getElementById('addModal').style.display='none'; loadData(); } else alert(j.error);}catch(e){ alert(e.message); }
 }
-
 loadData();
 </script>
 </body>
